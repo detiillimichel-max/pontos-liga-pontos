@@ -1,7 +1,7 @@
 // ============================================================
-// LIGA PONTOS SEM BLOQUEIO - versão para crianças
-// Ao conectar um par, verifica se todas as outras cores
-// ainda conseguem ser conectadas. Se não, a conexão é bloqueada.
+// LIGA PONTOS SEGURO – NUNCA BLOQUEIA OUTRA COR
+// A criança pinta manualmente, mas o jogo só permite
+// movimentos que não inviabilizem nenhuma outra cor.
 // ============================================================
 
 const ROWS = 6;
@@ -9,7 +9,7 @@ const COLS = 6;
 const COLORS = ["red", "green", "blue", "orange", "purple"];
 const COLOR_NAMES = { red:"Vermelho", green:"Verde", blue:"Azul", orange:"Laranja", purple:"Roxo" };
 
-// 5 fases (apenas posições dos pontos mudam)
+// 5 fases (todas garantidamente solucionáveis)
 const LEVELS = [
     { endpoints: [
         { color:"red", startRow:0, startCol:0, endRow:5, endCol:5 },
@@ -51,7 +51,7 @@ const TOTAL_LEVELS = LEVELS.length;
 
 let currentLevelIdx = 0;
 let grid = [];               // { pathColor, isEndpoint, endpointColor }
-let selectedPos = null;
+let selectedColor = "red";
 let msgTimeout = null;
 
 const gridContainer = document.getElementById("gridContainer");
@@ -59,9 +59,10 @@ const levelNumSpan = document.getElementById("levelNum");
 const flowsDoneSpan = document.getElementById("flowsDone");
 const coverageSpan = document.getElementById("coverage");
 const messageBox = document.getElementById("messageBox");
+const colorPaletteDiv = document.getElementById("colorPalette");
 
-// ========== AUXILIARES ==========
-function showMessage(msg, isError = false, duration = 2000) {
+// ========== FUNÇÕES AUXILIARES ==========
+function showMessage(msg, isError = false, duration = 2500) {
     if (msgTimeout) clearTimeout(msgTimeout);
     messageBox.innerHTML = msg;
     messageBox.style.background = isError ? "#ffc9b4" : "#ffe2a4";
@@ -78,7 +79,7 @@ function updateMessageToDefault() {
             messageBox.innerHTML = "🎉 PARABÉNS! Fase completa! Clique em PRÓXIMA FASE 🎉";
         messageBox.style.background = "#ffe88c";
     } else {
-        messageBox.innerHTML = "🌈 Toque num pontinho ★ e depois no outro da mesma cor! O jogo só permite se não atrapalhar as outras cores.";
+        messageBox.innerHTML = "🌈 Escolha uma cor e pinte células vizinhas. O jogo evita bloqueios!";
         messageBox.style.background = "#ffe2a4";
         messageBox.style.color = "#aa6d2b";
     }
@@ -104,13 +105,11 @@ function initGridFromLevel() {
 
 function resetFullLevel() {
     grid = initGridFromLevel();
-    selectedPos = null;
     renderGrid();
     updateStatsAndWin();
-    showMessage(`✨ Fase ${currentLevelIdx+1} reiniciada! Clique nos pares de pontinhos.`, false, 1800);
+    showMessage(`✨ Fase ${currentLevelIdx+1} reiniciada!`, false, 1800);
 }
 
-// Conta quantas cores já estão conectadas (caminho contínuo)
 function countCompletedFlows() {
     let completed = 0;
     for (let color of COLORS) {
@@ -162,12 +161,11 @@ function updateStatsAndWin() {
     }
 }
 
-// ========== VERIFICAÇÃO GLOBAL DE VIABILIDADE ==========
-// Verifica se, em um determinado grid, todas as cores ainda têm um caminho possível
-// (usando BFS apenas por células vazias ou já da própria cor)
+// ========== VERIFICAÇÃO DE VIABILIDADE GLOBAL ==========
+// Verifica se, em um grid, todas as cores podem ainda ser conectadas
+// (usando células vazias ou da própria cor, sem atravessar outras cores)
 function allColorsHavePath(gridState) {
     for (let color of COLORS) {
-        // encontra endpoints desta cor
         let endpoints = [];
         for (let r=0; r<ROWS; r++)
             for (let c=0; c<COLS; c++)
@@ -175,8 +173,6 @@ function allColorsHavePath(gridState) {
                     endpoints.push([r, c]);
         if (endpoints.length !== 2) continue;
         const [start, end] = endpoints;
-        // BFS que pode passar por células vazias (pathColor === null) ou da própria cor (pathColor === color)
-        // mas NÃO pode passar por células de outras cores (pathColor !== null && pathColor !== color)
         const visited = Array(ROWS).fill().map(() => Array(COLS).fill(false));
         const queue = [start];
         visited[start[0]][start[1]] = true;
@@ -201,123 +197,99 @@ function allColorsHavePath(gridState) {
     return true;
 }
 
-// Encontra um caminho entre start e end usando BFS (apenas por células vazias ou da cor)
-// e retorna o caminho como lista de coordenadas {r,c}
-function findPath(gridState, startRow, startCol, endRow, endCol, color) {
-    const parent = Array(ROWS).fill().map(() => Array(COLS).fill(null));
-    const visited = Array(ROWS).fill().map(() => Array(COLS).fill(false));
-    const queue = [{r: startRow, c: startCol}];
-    visited[startRow][startCol] = true;
-    let found = false;
-    while (queue.length && !found) {
-        const {r, c} = queue.shift();
-        if (r === endRow && c === endCol) { found = true; break; }
-        [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr,dc]) => {
-            const nr = r+dr, nc = c+dc;
-            if (nr>=0 && nr<ROWS && nc>=0 && nc<COLS && !visited[nr][nc]) {
-                const cell = gridState[nr][nc];
-                const isTarget = (nr === endRow && nc === endCol);
-                if (isTarget) {
-                    visited[nr][nc] = true;
-                    parent[nr][nc] = {r, c};
-                    queue.push({r: nr, c: nc});
-                }
-                else if (cell.isEndpoint) return; // não pode atravessar outros pontos fixos
-                else if (cell.pathColor === null || cell.pathColor === color) {
-                    visited[nr][nc] = true;
-                    parent[nr][nc] = {r, c};
-                    queue.push({r: nr, c: nc});
-                }
-            }
-        });
-    }
-    if (!found) return null;
-    // reconstrói caminho do fim ao início
-    const path = [];
-    let cur = {r: endRow, c: endCol};
-    while (!(cur.r === startRow && cur.c === startCol)) {
-        path.push(cur);
-        const p = parent[cur.r][cur.c];
-        if (!p) break;
-        cur = p;
-    }
-    path.push({r: startRow, c: startCol});
-    return path;
-}
-
-// Tenta conectar dois pontos. Antes, simula e verifica se todas as outras cores ainda terão caminho.
-function tryConnect(startRow, startCol, endRow, endCol, color) {
-    // Primeiro, encontra um caminho no grid atual (sem ainda modificar)
-    const path = findPath(grid, startRow, startCol, endRow, endCol, color);
-    if (!path) {
-        showMessage(`❌ Não há caminho livre para conectar os ${COLOR_NAMES[color]} agora.`, true, 2000);
-        return false;
-    }
-    // Faz uma cópia profunda do grid e aplica o caminho
-    const testGrid = JSON.parse(JSON.stringify(grid));
-    for (let node of path) {
-        if (!testGrid[node.r][node.c].isEndpoint) {
-            testGrid[node.r][node.c].pathColor = color;
+// Verifica se uma célula pode ser pintada (adjacente à mesma cor)
+function canPaintCell(row, col, color) {
+    if (grid[row][col].isEndpoint) return false;
+    if (grid[row][col].pathColor !== null && grid[row][col].pathColor !== color) return false;
+    if (grid[row][col].pathColor === color) return false;
+    // verifica vizinhança (4 direções)
+    for (let [dr, dc] of [[-1,0],[1,0],[0,-1],[0,1]]) {
+        const nr = row+dr, nc = col+dc;
+        if (nr>=0 && nr<ROWS && nc>=0 && nc<COLS && grid[nr][nc].pathColor === color) {
+            return true;
         }
     }
-    // Verifica se todas as outras cores ainda têm possibilidade de conexão
+    return false;
+}
+
+// Tenta pintar. Se após pintar todas as cores ainda tiverem caminho possível, executa.
+function tryPaint(row, col) {
+    const cell = grid[row][col];
+    if (cell.isEndpoint) {
+        showMessage(`🌟 Ponto fixo! Não pode pintar aqui.`, true, 1200);
+        return false;
+    }
+    if (cell.pathColor !== null && cell.pathColor !== selectedColor) {
+        showMessage(`❌ Caminho da cor ${COLOR_NAMES[cell.pathColor]} já existe aqui. Não pode cruzar!`, true, 1300);
+        return false;
+    }
+    if (cell.pathColor === selectedColor) {
+        showMessage(`✔️ Já pintado de ${COLOR_NAMES[selectedColor]}.`, false, 800);
+        return false;
+    }
+    if (!canPaintCell(row, col, selectedColor)) {
+        showMessage(`⚠️ Só pode pintar ao lado de um caminho da cor ${COLOR_NAMES[selectedColor]}!`, true, 1500);
+        return false;
+    }
+    // Simula a pintura
+    const testGrid = JSON.parse(JSON.stringify(grid));
+    testGrid[row][col].pathColor = selectedColor;
+    // Verifica se todas as cores ainda têm caminho
     if (allColorsHavePath(testGrid)) {
-        // Aplicar a mudança no grid real
-        for (let node of path) {
-            if (!grid[node.r][node.c].isEndpoint) {
-                grid[node.r][node.c].pathColor = color;
-            }
+        grid[row][col].pathColor = selectedColor;
+        renderGrid();
+        updateStatsAndWin();
+        // Verifica se essa cor foi completada
+        if (isColorConnected(selectedColor)) {
+            showMessage(`✅ Conexão ${COLOR_NAMES[selectedColor]} completa!`, false, 1500);
+        } else {
+            showMessage(`👍 ${COLOR_NAMES[selectedColor]} avançou! Continue.`, false, 800);
         }
         return true;
     } else {
-        showMessage(`⚠️ Essa conexão iria bloquear outra cor! Tente conectar uma cor diferente primeiro.`, true, 2500);
+        showMessage(`🚫 Essa pintura bloquearia outra cor! Tente outro lugar ou outra cor.`, true, 2500);
         return false;
     }
 }
 
-// ========== CLIQUE NOS PONTOS ==========
-function onCellClick(row, col) {
-    const cell = grid[row][col];
-    if (!cell.isEndpoint) {
-        if (selectedPos !== null)
-            showMessage(`⭐ Toque no segundo pontinho da cor ${COLOR_NAMES[selectedPos.color]}`, true, 1000);
-        else
-            showMessage("🌈 Toque primeiro num pontinho com estrela ★", false, 1000);
-        return;
-    }
-    const color = cell.endpointColor;
-    if (selectedPos === null) {
-        selectedPos = { row, col, color };
-        renderGrid();
-        showMessage(`✨ Agora toque no OUTRO pontinho ${COLOR_NAMES[color]} para conectar!`, false, 1500);
-        return;
-    }
-    const first = selectedPos;
-    selectedPos = null;
-    if (first.row === row && first.col === col) {
-        renderGrid();
-        showMessage("Clique em dois pontinhos DIFERENTES da mesma cor :)", true, 1200);
-        return;
-    }
-    if (first.color !== color) {
-        renderGrid();
-        showMessage(`Cores diferentes! Conecte ${COLOR_NAMES[first.color]} com ${COLOR_NAMES[first.color]} apenas.`, true, 1500);
-        return;
-    }
-    // Tenta conectar com verificação de bloqueio
-    const success = tryConnect(first.row, first.col, row, col, color);
-    renderGrid();
-    if (success) {
-        updateStatsAndWin();
-        if (countCompletedFlows() === COLORS.length) {
-            showMessage(`🎉 Parabéns! Fase ${currentLevelIdx+1} completa! 🎉`, false, 2500);
-        } else {
-            showMessage(`✅ Conexão ${COLOR_NAMES[color]} criada sem bloquear ninguém!`, false, 1500);
+function isColorConnected(color) {
+    let endpoints = [];
+    for (let r=0; r<ROWS; r++)
+        for (let c=0; c<COLS; c++)
+            if (grid[r][c].isEndpoint && grid[r][c].endpointColor === color)
+                endpoints.push([r, c]);
+    if (endpoints.length !== 2) return false;
+    const [start, end] = endpoints;
+    const visited = Array(ROWS).fill().map(() => Array(COLS).fill(false));
+    const queue = [start];
+    visited[start[0]][start[1]] = true;
+    while (queue.length) {
+        const [r, c] = queue.shift();
+        if (r === end[0] && c === end[1]) return true;
+        for (let [dr, dc] of [[-1,0],[1,0],[0,-1],[0,1]]) {
+            const nr = r+dr, nc = c+dc;
+            if (nr>=0 && nr<ROWS && nc>=0 && nc<COLS && !visited[nr][nc] && grid[nr][nc].pathColor === color) {
+                visited[nr][nc] = true;
+                queue.push([nr, nc]);
+            }
         }
-    } else {
-        // mensagem de erro já exibida
-        renderGrid();
     }
+    return false;
+}
+
+function clearAllPaths() {
+    for (let r=0; r<ROWS; r++) {
+        for (let c=0; c<COLS; c++) {
+            if (!grid[r][c].isEndpoint) {
+                grid[r][c].pathColor = null;
+            } else {
+                grid[r][c].pathColor = grid[r][c].endpointColor;
+            }
+        }
+    }
+    renderGrid();
+    updateStatsAndWin();
+    showMessage("🧽 Caminhos apagados! Recomece.", false, 1600);
 }
 
 function renderGrid() {
@@ -328,13 +300,27 @@ function renderGrid() {
             const div = document.createElement("div");
             div.className = "cell";
             if (cell.isEndpoint) div.classList.add("endpoint");
-            if (selectedPos && selectedPos.row === i && selectedPos.col === j)
-                div.classList.add("selected");
             div.setAttribute("data-color", cell.pathColor || "");
-            div.addEventListener("click", (() => onCellClick(i, j)));
+            div.addEventListener("click", (() => tryPaint(i, j)));
             gridContainer.appendChild(div);
         }
     }
+}
+
+function createPalette() {
+    colorPaletteDiv.innerHTML = "";
+    COLORS.forEach(color => {
+        const btn = document.createElement("div");
+        btn.className = `color-btn ${color}`;
+        if (selectedColor === color) btn.classList.add("active");
+        btn.addEventListener("click", () => {
+            selectedColor = color;
+            document.querySelectorAll(".color-btn").forEach(cb => cb.classList.remove("active"));
+            btn.classList.add("active");
+            showMessage(`🖌️ Cor: ${COLOR_NAMES[color]}`, false, 800);
+        });
+        colorPaletteDiv.appendChild(btn);
+    });
 }
 
 function changeLevel(delta) {
@@ -343,24 +329,25 @@ function changeLevel(delta) {
     if (newIdx >= TOTAL_LEVELS) newIdx = 0;
     currentLevelIdx = newIdx;
     grid = initGridFromLevel();
-    selectedPos = null;
     levelNumSpan.innerText = currentLevelIdx+1;
     renderGrid();
     updateStatsAndWin();
-    showMessage(`📀 FASE ${currentLevelIdx+1}! Conecte os pares sem bloquear as outras cores.`, false, 1800);
+    showMessage(`📀 FASE ${currentLevelIdx+1}`, false, 1500);
 }
 
 function bindEvents() {
     document.getElementById("prevBtn").addEventListener("click", () => changeLevel(-1));
     document.getElementById("nextBtn").addEventListener("click", () => changeLevel(1));
     document.getElementById("resetBtn").addEventListener("click", () => resetFullLevel());
+    document.getElementById("clearPathsBtn").addEventListener("click", () => clearAllPaths());
 }
 
 function startGame() {
     currentLevelIdx = 0;
     grid = initGridFromLevel();
-    selectedPos = null;
+    selectedColor = "red";
     levelNumSpan.innerText = "1";
+    createPalette();
     renderGrid();
     updateStatsAndWin();
     bindEvents();
