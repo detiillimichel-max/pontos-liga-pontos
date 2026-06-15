@@ -1,0 +1,204 @@
+* {
+    user-select: none;
+    touch-action: manipulation;
+    box-sizing: border-box;
+}
+
+body {
+    background: linear-gradient(145deg, #2e7d64, #1b5a46);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Comic Neue', 'Comic Sans MS', 'Chalkboard SE', 'Segoe UI', cursive;
+    padding: 16px;
+    margin: 0;
+}
+
+.game-wrapper {
+    background: #fef3e0;
+    border-radius: 64px;
+    padding: 20px 16px 24px;
+    box-shadow: 0 20px 35px rgba(0, 0, 0, 0.3);
+    max-width: 650px;
+    width: 100%;
+}
+
+.game-panel {
+    background: #fffaf0;
+    border-radius: 48px;
+    padding: 16px;
+    box-shadow: inset 0 0 0 2px #ffe5b4, 0 8px 18px rgba(0, 0, 0, 0.1);
+}
+
+.stats {
+    display: flex;
+    justify-content: space-between;
+    background: #243b2a;
+    border-radius: 60px;
+    padding: 8px 16px;
+    margin-bottom: 20px;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.stat-badge {
+    background: #fef1cf;
+    border-radius: 60px;
+    padding: 4px 16px;
+    font-weight: bold;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    font-size: 0.9rem;
+    color: #4a2f0a;
+    box-shadow: inset 0 1px 2px white, 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.stat-number {
+    font-size: 1.8rem;
+    font-weight: 800;
+    line-height: 1;
+    color: #e67e22;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    aspect-ratio: 6 / 6;
+    background-color: #efe2c6;
+    border-radius: 36px;
+    padding: 10px;
+    gap: 6px;
+    margin-bottom: 20px;
+    box-shadow: inset 0 0 0 3px #fff0cf, 0 12px 20px rgba(0, 0, 0, 0.2);
+}
+
+.cell {
+    background-color: #fcf3df;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: 0.05s linear;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05), inset 0 1px 0 white;
+    position: relative;
+}
+
+.cell:active {
+    transform: scale(0.96);
+}
+
+.cell[data-color="red"] { background-color: #ff8a8a; }
+.cell[data-color="green"] { background-color: #8bdd9b; }
+.cell[data-color="blue"] { background-color: #8bb9ff; }
+.cell[data-color="orange"] { background-color: #ffbc6e; }
+.cell[data-color="purple"] { background-color: #d69cff; }
+.cell[data-color=""] { background-color: #fff0cf; }
+
+.cell.endpoint::after {
+    content: "★";
+    font-size: 1.7rem;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    pointer-events: none;
+    font-weight: bold;
+}
+
+.color-palette {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.color-btn {
+    width: 64px;
+    height: 64px;
+    border-radius: 40px;
+    border: 4px solid #fff2cf;
+    cursor: pointer;
+    transition: 0.05s linear;
+    box-shadow: 0 6px 0 rgba(0, 0, 0, 0.15);
+}
+
+.color-btn.active {
+    transform: translateY(2px);
+    box-shadow: 0 3px 0 rgba(0, 0, 0, 0.15);
+    border: 4px solid #ffd966;
+    filter: brightness(1.05);
+    scale: 1.02;
+}
+
+.color-btn.red { background-color: #ff6b6b; }
+.color-btn.green { background-color: #6bcf7f; }
+.color-btn.blue { background-color: #6ba5ff; }
+.color-btn.orange { background-color: #ffb347; }
+.color-btn.purple { background-color: #c97eff; }
+
+.action-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    background: #f7c56e;
+    border: none;
+    font-family: inherit;
+    font-weight: bold;
+    font-size: 0.9rem;
+    padding: 8px 18px;
+    border-radius: 50px;
+    color: #4e2e0a;
+    cursor: pointer;
+    box-shadow: 0 5px 0 #b97f2e;
+    transition: 0.05s linear;
+}
+
+.btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #b97f2e;
+}
+
+.btn-reset {
+    background: #b5d3a5;
+    color: #2d5020;
+    box-shadow: 0 5px 0 #6c8f59;
+}
+
+.btn-clear {
+    background: #e6bc83;
+    box-shadow: 0 5px 0 #b77c3a;
+    width: 90%;
+    margin-top: 6px;
+}
+
+.message-area {
+    text-align: center;
+    background: #ffe2a4;
+    margin-top: 18px;
+    padding: 10px;
+    border-radius: 50px;
+    font-weight: bold;
+    color: #aa6d2b;
+    font-size: 0.85rem;
+}
+
+footer {
+    text-align: center;
+    font-size: 0.7rem;
+    color: #b58a4f;
+    margin-top: 12px;
+}
+
+@media (max-width: 550px) {
+    .color-btn { width: 52px; height: 52px; }
+    .cell.endpoint::after { font-size: 1.3rem; }
+    .stat-number { font-size: 1.4rem; }
+}
