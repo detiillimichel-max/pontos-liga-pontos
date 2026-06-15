@@ -1,56 +1,46 @@
 // ============================================================
-// LIGA PONTOS SEGURO – NUNCA BLOQUEIA OUTRA COR
-// A criança pinta manualmente, mas o jogo só permite
-// movimentos que não inviabilizem nenhuma outra cor.
+// LIGA PONTOS – 3 CORES (Vermelho, Verde, Azul)
+// Manual: a criança pinta célula por célula.
+// O jogo impede pinturas que bloqueiem qualquer outra cor.
 // ============================================================
 
 const ROWS = 6;
 const COLS = 6;
-const COLORS = ["red", "green", "blue", "orange", "purple"];
-const COLOR_NAMES = { red:"Vermelho", green:"Verde", blue:"Azul", orange:"Laranja", purple:"Roxo" };
+const COLORS = ["red", "green", "blue"];
+const COLOR_NAMES = { red:"Vermelho", green:"Verde", blue:"Azul" };
 
-// 5 fases (todas garantidamente solucionáveis)
+// FASES com apenas 3 cores – posições escolhidas para não se cruzarem
 const LEVELS = [
     { endpoints: [
         { color:"red", startRow:0, startCol:0, endRow:5, endCol:5 },
         { color:"green", startRow:0, startCol:2, endRow:5, endCol:3 },
-        { color:"blue", startRow:0, startCol:4, endRow:5, endCol:1 },
-        { color:"orange", startRow:2, startCol:0, endRow:4, endCol:5 },
-        { color:"purple", startRow:3, startCol:0, endRow:2, endCol:5 }
+        { color:"blue", startRow:0, startCol:4, endRow:5, endCol:1 }
     ]},
     { endpoints: [
-        { color:"red", startRow:0, startCol:1, endRow:4, endCol:5 },
+        { color:"red", startRow:0, startCol:1, endRow:5, endCol:4 },
         { color:"green", startRow:0, startCol:3, endRow:5, endCol:0 },
-        { color:"blue", startRow:1, startCol:0, endRow:3, endCol:5 },
-        { color:"orange", startRow:2, startCol:2, endRow:5, endCol:4 },
-        { color:"purple", startRow:0, startCol:5, endRow:5, endCol:2 }
+        { color:"blue", startRow:1, startCol:0, endRow:4, endCol:5 }
     ]},
     { endpoints: [
         { color:"red", startRow:0, startCol:5, endRow:5, endCol:0 },
         { color:"green", startRow:0, startCol:0, endRow:3, endCol:3 },
-        { color:"blue", startRow:1, startCol:5, endRow:4, endCol:0 },
-        { color:"orange", startRow:2, startCol:0, endRow:5, endCol:3 },
-        { color:"purple", startRow:3, startCol:5, endRow:5, endCol:5 }
+        { color:"blue", startRow:2, startCol:5, endRow:4, endCol:0 }
     ]},
     { endpoints: [
         { color:"red", startRow:1, startCol:1, endRow:4, endCol:4 },
         { color:"green", startRow:0, startCol:2, endRow:5, endCol:5 },
-        { color:"blue", startRow:0, startCol:3, endRow:3, endCol:0 },
-        { color:"orange", startRow:2, startCol:5, endRow:5, endCol:1 },
-        { color:"purple", startRow:4, startCol:0, endRow:1, endCol:5 }
+        { color:"blue", startRow:2, startCol:0, endRow:5, endCol:2 }
     ]},
     { endpoints: [
         { color:"red", startRow:0, startCol:4, endRow:4, endCol:1 },
         { color:"green", startRow:0, startCol:1, endRow:5, endCol:4 },
-        { color:"blue", startRow:2, startCol:1, endRow:3, endCol:5 },
-        { color:"orange", startRow:5, startCol:0, endRow:1, endCol:2 },
-        { color:"purple", startRow:3, startCol:3, endRow:5, endCol:5 }
+        { color:"blue", startRow:3, startCol:0, endRow:5, endCol:5 }
     ]}
 ];
 const TOTAL_LEVELS = LEVELS.length;
 
 let currentLevelIdx = 0;
-let grid = [];               // { pathColor, isEndpoint, endpointColor }
+let grid = [];               // cada célula: { pathColor, isEndpoint, endpointColor }
 let selectedColor = "red";
 let msgTimeout = null;
 
@@ -161,9 +151,8 @@ function updateStatsAndWin() {
     }
 }
 
-// ========== VERIFICAÇÃO DE VIABILIDADE GLOBAL ==========
-// Verifica se, em um grid, todas as cores podem ainda ser conectadas
-// (usando células vazias ou da própria cor, sem atravessar outras cores)
+// ========== VERIFICAÇÃO DE VIABILIDADE ==========
+// Verifica se, em um grid, todas as cores ainda podem ser conectadas
 function allColorsHavePath(gridState) {
     for (let color of COLORS) {
         let endpoints = [];
@@ -184,7 +173,7 @@ function allColorsHavePath(gridState) {
                 const nr = r+dr, nc = c+dc;
                 if (nr>=0 && nr<ROWS && nc>=0 && nc<COLS && !visited[nr][nc]) {
                     const cell = gridState[nr][nc];
-                    if (cell.isEndpoint && !(nr === end[0] && nc === end[1])) return; // não pode atravessar outros pontos
+                    if (cell.isEndpoint && !(nr === end[0] && nc === end[1])) return; // não atravessa outros pontos
                     if (cell.pathColor === null || cell.pathColor === color) {
                         visited[nr][nc] = true;
                         queue.push([nr, nc]);
@@ -202,7 +191,6 @@ function canPaintCell(row, col, color) {
     if (grid[row][col].isEndpoint) return false;
     if (grid[row][col].pathColor !== null && grid[row][col].pathColor !== color) return false;
     if (grid[row][col].pathColor === color) return false;
-    // verifica vizinhança (4 direções)
     for (let [dr, dc] of [[-1,0],[1,0],[0,-1],[0,1]]) {
         const nr = row+dr, nc = col+dc;
         if (nr>=0 && nr<ROWS && nc>=0 && nc<COLS && grid[nr][nc].pathColor === color) {
@@ -212,7 +200,7 @@ function canPaintCell(row, col, color) {
     return false;
 }
 
-// Tenta pintar. Se após pintar todas as cores ainda tiverem caminho possível, executa.
+// Tenta pintar. Só permite se após a pintura todas as cores ainda tiverem caminho.
 function tryPaint(row, col) {
     const cell = grid[row][col];
     if (cell.isEndpoint) {
@@ -234,12 +222,10 @@ function tryPaint(row, col) {
     // Simula a pintura
     const testGrid = JSON.parse(JSON.stringify(grid));
     testGrid[row][col].pathColor = selectedColor;
-    // Verifica se todas as cores ainda têm caminho
     if (allColorsHavePath(testGrid)) {
         grid[row][col].pathColor = selectedColor;
         renderGrid();
         updateStatsAndWin();
-        // Verifica se essa cor foi completada
         if (isColorConnected(selectedColor)) {
             showMessage(`✅ Conexão ${COLOR_NAMES[selectedColor]} completa!`, false, 1500);
         } else {
@@ -332,7 +318,7 @@ function changeLevel(delta) {
     levelNumSpan.innerText = currentLevelIdx+1;
     renderGrid();
     updateStatsAndWin();
-    showMessage(`📀 FASE ${currentLevelIdx+1}`, false, 1500);
+    showMessage(`📀 FASE ${currentLevelIdx+1} – 3 caminhos sem cruzamento!`, false, 1500);
 }
 
 function bindEvents() {
