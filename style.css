@@ -107,37 +107,10 @@ body {
     font-weight: bold;
 }
 
-.color-palette {
-    display: flex;
-    justify-content: center;
-    gap: 16px;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
+.cell.selected {
+    box-shadow: 0 0 0 4px gold, 0 0 0 8px rgba(255, 215, 0, 0.4);
+    transform: scale(0.98);
 }
-
-.color-btn {
-    width: 64px;
-    height: 64px;
-    border-radius: 40px;
-    border: 4px solid #fff2cf;
-    cursor: pointer;
-    transition: 0.05s linear;
-    box-shadow: 0 6px 0 rgba(0, 0, 0, 0.15);
-}
-
-.color-btn.active {
-    transform: translateY(2px);
-    box-shadow: 0 3px 0 rgba(0, 0, 0, 0.15);
-    border: 4px solid #ffd966;
-    filter: brightness(1.05);
-    scale: 1.02;
-}
-
-.color-btn.red { background-color: #ff6b6b; }
-.color-btn.green { background-color: #6bcf7f; }
-.color-btn.blue { background-color: #6ba5ff; }
-.color-btn.orange { background-color: #ffb347; }
-.color-btn.purple { background-color: #c97eff; }
 
 .action-buttons {
     display: flex;
@@ -172,13 +145,6 @@ body {
     box-shadow: 0 5px 0 #6c8f59;
 }
 
-.btn-clear {
-    background: #e6bc83;
-    box-shadow: 0 5px 0 #b77c3a;
-    width: 90%;
-    margin-top: 6px;
-}
-
 .message-area {
     text-align: center;
     background: #ffe2a4;
@@ -198,7 +164,6 @@ footer {
 }
 
 @media (max-width: 550px) {
-    .color-btn { width: 52px; height: 52px; }
     .cell.endpoint::after { font-size: 1.3rem; }
     .stat-number { font-size: 1.4rem; }
 }
