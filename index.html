@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Liga Pontos sem Bloqueio | Jogo Infantil</title>
+    <title>Liga Pontos sem Bloqueio – Jogo Infantil</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -17,13 +17,16 @@
 
         <div id="gridContainer" class="grid"></div>
 
+        <div class="color-palette" id="colorPalette"></div>
+
         <div class="action-buttons">
             <button class="btn" id="prevBtn">◀ FASE ANTERIOR</button>
-            <button class="btn btn-reset" id="resetBtn">🔄 RECOMEÇAR FASE</button>
+            <button class="btn btn-reset" id="resetBtn">🔄 RECOMEÇAR</button>
             <button class="btn" id="nextBtn">PRÓXIMA FASE ▶</button>
         </div>
-        <div id="messageBox" class="message-area">🌈 Toque num pontinho ★ e depois no outro da mesma cor! O jogo só permite se não atrapalhar as outras cores.</div>
-        <footer>⭐ O jogo impede caminhos que bloqueiam outras cores. Experimente conectar em outra ordem!</footer>
+        <button class="btn btn-clear" id="clearPathsBtn">🧽 APAGAR MEU CAMINHO</button>
+        <div id="messageBox" class="message-area">🌈 1. Escolha uma cor. 2. Clique em células vizinhas ao caminho. O jogo evita bloqueios!</div>
+        <footer>⭐ Só pode pintar ao lado da mesma cor. O jogo impede que você atrapalhe outras cores.</footer>
     </div>
 </div>
 <script src="script.js"></script>
