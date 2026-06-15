@@ -1,9 +1,8 @@
-# pontos-liga-pontos
 # 🎨 Liga Pontos Coloridos – Jogo Infantil de Conectar Cores
 
 Um jogo divertido e educativo para crianças, onde o objetivo é **ligar pontos da mesma cor** preenchendo caminhos contínuos no grid. Cada fase mantém o mesmo número de cores e formato, mudando apenas a **posição dos pontos** – desafios progressivos que estimulam o raciocínio lógico e a coordenação motora.
 
-![Prévia do jogo](https://via.placeholder.com/800x400?text=Liga+Pontos+Coloridos)  
+![Prévia do jogo ()  
 *(adicione aqui uma captura de tela do seu jogo funcionando)*
 
 ## 🕹️ Como jogar
