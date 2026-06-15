@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Liga Pontos - Jogo Infantil de Conectar Cores</title>
+    <style>
+        * {
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(145deg, #1a5f7a 0%, #0e3e52 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', 'Comic Neue', 'Comic Sans MS', 'Chalkboard SE', 'Poppins', sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* Container principal estilo brinquedo */
+        .game-container {
+            background: #fef9e8;
+            border-radius: 72px;
+            padding: 24px 20px 28px 20px;
+            box-shadow: 0 20px 35px rgba(0, 0, 0, 0.3), inset 0 1px 4px rgba(255, 255, 255, 0.8);
+            border: 2px solid #ffcf9a;
+        }
+
+        .game-panel {
+            background: #fffaef;
+            border-radius: 48px;
+            padding: 20px;
+            box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.02), 0 8px 18px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Cabeçalho com estatísticas */
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            background: #2c3e2f;
+            padding: 12px 20px;
+            border-radius: 60px;
+            margin-bottom: 24px;
+            color: #f9e7b3;
+            text-shadow: 1px 1px 0 #1e2a1f;
+            font-weight: bold;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            background: #fdf8e0;
+            color: #2c5a2e;
+            padding: 6px 16px;
+            border-radius: 50px;
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            font-size: 1.2rem;
+            box-shadow: inset 0 1px 2px white, 0 3px 6px rgba(0,0,0,0.1);
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            line-height: 1;
+            color: #e67e22;
+        }
+
+        /* Grade de jogo */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            aspect-ratio: 6 / 6;
+            background-color: #e2dccd;
+            border-radius: 40px;
+            padding: 12px;
+            gap: 6px;
+            background-image: radial-gradient(circle at 25% 40%, rgba(200,180,130,0.2) 2%, transparent 2.5%);
+            background-size: 18px 18px;
+            margin-bottom: 24px;
+            box-shadow: inset 0 0 0 3px #fff7e8, 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .cell {
+            background-color: #fff6e0;
+            border-radius: 20px;
+            transition: all 0.05s linear;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), inset 0 0 0 1px rgba(255,255,200,0.8);
+            cursor: pointer;
+            position: relative;
+        }
+
+        /* Efeito de clique */
+        .cell:active {
+            transform: scale(0.96);
+        }
+
+        /* Estilo para cada cor de caminho ou ponto */
+        .cell[data-color="red"] { background-color: #ff6b6b; box-shadow: inset 0 1px 3px #ffb3b3, 0 2px 4px rgba(0,0,0,0.1); }
+        .cell[data-color="green"] { background-color: #6bcf7f; box-shadow: inset 0 1px 3px #b0ffc0, 0 2px 4px rgba(0,0,0,0.1); }
+        .cell[data-color="blue"] { background-color: #6ba5ff; box-shadow: inset 0 1px 3px #b8d4ff, 0 2px 4px rgba(0,0,0,0.1); }
+        .cell[data-color="orange"] { background-color: #ffb347; box-shadow: inset 0 1px 3px #ffdd99, 0 2px 4px rgba(0,0,0,0.1); }
+        .cell[data-color="purple"] { background-color: #c97eff; box-shadow: inset 0 1px 3px #e6c3ff, 0 2px 4px rgba(0,0,0,0.1); }
+        .cell[data-color=""] { background-color: #fff0cf; }
+        
+        /* Marcador de ponto final (estrelinha / brilho) */
+        .cell.endpoint::after {
+            content: "★";
+            position: absolute;
+            font-size: 1.8rem;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            text-shadow: 0 0 3px black;
+            font-weight: bold;
+            pointer-events: none;
+            opacity: 0.9;
+        }
+
+        /* Paleta de cores fofinha */
+        .color-palette {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .color-btn {
+            width: 64px;
+            height: 64px;
+            border-radius: 40px;
+            border: 4px solid #fff2cf;
+            cursor: pointer;
+            transition: 0.1s ease;
+            box-shadow: 0 6px 0 rgba(0, 0, 0, 0.15);
+        }
+        
+        .color-btn.active {
+            transform: translateY(2px);
+            box-shadow: 0 3px 0 rgba(0, 0, 0, 0.15);
+            border: 4px solid #ffd966;
+            filter: brightness(1.05);
+            scale: 1.02;
+        }
+        
+        .color-btn.red { background-color: #ff6b6b; }
+        .color-btn.green { background-color: #6bcf7f; }
+        .color-btn.blue { background-color: #6ba5ff; }
+        .color-btn.orange { background-color: #ffb347; }
+        .color-btn.purple { background-color: #c97eff; }
+
+        /* Botões de ação */
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: #ffdd99;
+            border: none;
+            font-family: inherit;
+            font-weight: bold;
+            font-size: 1.1rem;
+            padding: 8px 20px;
+            border-radius: 40px;
+            color: #6b3f00;
+            cursor: pointer;
+            box-shadow: 0 5px 0 #bb964f;
+            transition: 0.05s linear;
+        }
+        
+        .btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #bb964f;
+        }
+        
+        .btn-level {
+            background: #7b9c6e;
+            color: white;
+            box-shadow: 0 5px 0 #4a6240;
+        }
+        
+        .message-area {
+            text-align: center;
+            margin-top: 18px;
+            font-weight: bold;
+            background: #f0e2b6;
+            display: inline-block;
+            width: auto;
+            padding: 6px 20px;
+            border-radius: 32px;
+            font-size: 0.9rem;
+            color: #aa6f20;
+        }
+
+        h2 {
+            font-size: 1.3rem;
+            text-align: center;
+            margin: 0 0 8px 0;
+            color: #ffb347;
+            text-shadow: 1px 1px 0 #7a4700;
+        }
+        
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            margin-top: 12px;
+            color: #c0a16b;
+        }
+        
+        @media (max-width: 550px) {
+            .game-container { padding: 12px; }
+            .stat-value { font-size: 1.4rem; }
+            .color-btn { width: 52px; height: 52px; }
+            .cell.endpoint::after { font-size: 1.2rem; }
+            .grid { gap: 4px; padding: 8px; }
+        }
+    </style>
+</head>
+<body>
+<div class="game-container">
+    <div class="game-panel">
+        <div class="stats">
+            <div class="stat-card"><span class="stat-label">🌟 FASE</span><span class="stat-value" id="levelNum">1</span></div>
+            <div class="stat-card"><span class="stat-label">🎯 JOGADAS</span><span class="stat-value" id="moveCount">0</span></div>
+            <div class="stat-card"><span class="stat-label">✨ FLUXOS</span><span class="stat-value" id="flowsDone">0</span><span style="font-size:1rem;">/5</span></div>
+            <div class="stat-card"><span class="stat-label">🧩 COBERTURA</span><span class="stat-value" id="coverage">0</span><span style="font-size:1rem;">%</span></div>
+        </div>
+
+        <div id="gridContainer" class="grid"></div>
+
+        <div class="color-palette" id="colorPalette">
+            <!-- Botões dinâmicos das cores -->
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn btn-level" id="prevBtn">◀ FASE ANTERIOR</button>
+            <button class="btn" id="resetBtn">🔄 RECOMEÇAR FASE</button>
+            <button class="btn btn-level" id="nextBtn">PRÓXIMA FASE ▶</button>
+        </div>
+        <div style="display: flex; justify-content: center; margin-top: 12px;">
+            <button class="btn" id="clearPathsBtn">🧽 LIMPAR CAMINHOS</button>
+        </div>
+        <div id="messageBox" class="message-area">✨ Pinte os caminhos para conectar os pontos iguais!</div>
+        <footer>🔵 Clique numa cor, depois pinte as células vazias. Conecte pontinhos da mesma cor!</footer>
+    </div>
+</div>
+
+<script>
+    // --------------------------------------------------------------
+    // CONFIGURAÇÕES - 5 CORES, GRADE 6x6
+    // --------------------------------------------------------------
+    const COLORS = ["red", "green", "blue", "orange", "purple"];
+    const COLOR_NAMES = {
+        red: "Vermelho", green: "Verde", blue: "Azul", orange: "Laranja", purple: "Roxo"
+    };
+    const ROWS = 6;
+    const COLS = 6;
+    
+    // ---------- FASES (apenas mudam as posições das cores) ----------
+    // Cada fase contém array de objetos: {color, startRow, startCol, endRow, endCol}
+    const LEVELS = [
+        { // Fase 1 - fácil
+            endpoints: [
+                { color: "red", startRow: 0, startCol: 0, endRow: 5, endCol: 5 },
+                { color: "green", startRow: 0, startCol: 2, endRow: 5, endCol: 3 },
+                { color: "blue", startRow: 0, startCol: 4, endRow: 5, endCol: 1 },
+                { color: "orange", startRow: 2, startCol: 0, endRow: 4, endCol: 5 },
+                { color: "purple", startRow: 3, startCol: 0, endRow: 2, endCol: 5 }
+            ]
+        },
+        { // Fase 2 - posições diferentes
+            endpoints: [
+                { color: "red", startRow: 0, startCol: 1, endRow: 4, endCol: 5 },
+                { color: "green", startRow: 0, startCol: 3, endRow: 5, endCol: 0 },
+                { color: "blue", startRow: 1, startCol: 0, endRow: 3, endCol: 5 },
+                { color: "orange", startRow: 2, startCol: 2, endRow: 5, endCol: 4 },
+                { color: "purple", startRow: 0, startCol: 5, endRow: 5, endCol: 2 }
+            ]
+        },
+        { // Fase 3 - um pouco mais divertido
+            endpoints: [
+                { color: "red", startRow: 0, startCol: 5, endRow: 5, endCol: 0 },
+                { color: "green", startRow: 0, startCol: 0, endRow: 3, endCol: 3 },
+                { color: "blue", startRow: 1, startCol: 5, endRow: 4, endCol: 0 },
+                { color: "orange", startRow: 2, startCol: 0, endRow: 5, endCol: 3 },
+                { color: "purple", startRow: 3, startCol: 5, endRow: 5, endCol: 5 }
+            ]
+        },
+        { // Fase 4 - desafio suave
+            endpoints: [
+                { color: "red", startRow: 1, startCol: 1, endRow: 4, endCol: 4 },
+                { color: "green", startRow: 0, startCol: 2, endRow: 5, endCol: 5 },
+                { color: "blue", startRow: 0, startCol: 3, endRow: 3, endCol: 0 },
+                { color: "orange", startRow: 2, startCol: 5, endRow: 5, endCol: 1 },
+                { color: "purple", startRow: 4, startCol: 0, endRow: 1, endCol: 5 }
+            ]
+        },
+        { // Fase 5
+            endpoints: [
+                { color: "red", startRow: 0, startCol: 4, endRow: 4, endCol: 1 },
+                { color: "green", startRow: 0, startCol: 1, endRow: 5, endCol: 4 },
+                { color: "blue", startRow: 2, startCol: 1, endRow: 3, endCol: 5 },
+                { color: "orange", startRow: 5, startCol: 0, endRow: 1, endCol: 2 },
+                { color: "purple", startRow: 3, startCol: 3, endRow: 5, endCol: 5 }
+            ]
+        }
+    ];
+    
+    const TOTAL_LEVELS = LEVELS.length;
+    
+    // Estado global do jogo
+    let currentLevelIdx = 0;          // 0-indexed
+    let grid = [];                     // matriz ROWS x COLS: cada cell = { pathColor: string ou null, isEndpoint: bool, endpointColor: string ou null }
+    let moves = 0;
+    let selectedColor = "red";         // cor ativa para pintar
+    
+    // Referências DOM
+    const gridContainer = document.getElementById("gridContainer");
+    const levelNumSpan = document.getElementById("levelNum");
+    const moveCountSpan = document.getElementById("moveCount");
+    const flowsDoneSpan = document.getElementById("flowsDone");
+    const coverageSpan = document.getElementById("coverage");
+    const messageBox = document.getElementById("messageBox");
+    
+    // --------------------------------------------------------------
+    // FUNÇÕES AUXILIARES
+    // --------------------------------------------------------------
+    
+    // Inicializar ou resetar grade a partir da fase atual
+    function initGridFromLevel() {
+        // Cria grade vazia
+        const newGrid = Array(ROWS).fill().map(() => Array(COLS).fill().map(() => ({
+            pathColor: null,
+            isEndpoint: false,
+            endpointColor: null
+        })));
+        
+        const levelData = LEVELS[currentLevelIdx];
+        for (let ep of levelData.endpoints) {
+            const { color, startRow, startCol, endRow, endCol } = ep;
+            // ponto inicial
+            newGrid[startRow][startCol].isEndpoint = true;
+            newGrid[startRow][startCol].endpointColor = color;
+            newGrid[startRow][startCol].pathColor = color;   // endpoint já tem cor
+            
+            // ponto final
+            newGrid[endRow][endCol].isEndpoint = true;
+            newGrid[endRow][endCol].endpointColor = color;
+            newGrid[endRow][endCol].pathColor = color;
+        }
+        
+        // validar se alguma célula endpoint conflitante (não deveria)
+        return newGrid;
+    }
+    
+    // Reseta caminhos pintados (mantém endpoints)
+    function resetPathsOnly() {
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                if (!grid[r][c].isEndpoint) {
+                    grid[r][c].pathColor = null;
+                } else {
+                    // mantém a cor do endpoint
+                    grid[r][c].pathColor = grid[r][c].endpointColor;
+                }
+            }
+        }
+        // Não aumenta movimentos no reset de caminhos, mas como ação explícita
+        // Chama render e atualiza stats
+        renderGrid();
+        updateStatsAndWin();
+        showMessage("🧹 Caminhos limpos! Pinte as conexões novamente.", 1500);
+    }
+    
+    // Reset completo da fase (inclui zerar movimentos)
+    function resetFullLevel() {
+        grid = initGridFromLevel();
+        moves = 0;
+        updateMoveDisplay();
+        renderGrid();
+        updateStatsAndWin();
+        showMessage(`🔄 Fase ${currentLevelIdx+1} reiniciada! Conecte os pontos.`, 1200);
+    }
+    
+    // Avançar / voltar fase
+    function changeLevel(delta) {
+        let newIdx = currentLevelIdx + delta;
+        if (newIdx < 0) newIdx = TOTAL_LEVELS - 1;
+        if (newIdx >= TOTAL_LEVELS) newIdx = 0;
+        currentLevelIdx = newIdx;
+        grid = initGridFromLevel();
+        moves = 0;
+        updateMoveDisplay();
+        renderGrid();
+        updateStatsAndWin();
+        levelNumSpan.innerText = currentLevelIdx+1;
+        showMessage(`📀 FASE ${currentLevelIdx+1}! Novos desafios de ligar os pontos.`, 1200);
+    }
+    
+    // Contar fluxos completos (verifica se cada cor tem caminho contínuo entre seus endpoints)
+    function countCompletedFlows() {
+        let completed = 0;
+        for (let color of COLORS) {
+            // localizar posições dos endpoints dessa cor
+            let startPos = null;
+            let endPos = null;
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    if (grid[r][c].isEndpoint && grid[r][c].endpointColor === color) {
+                        if (startPos === null) startPos = [r, c];
+                        else endPos = [r, c];
+                    }
+                }
+            }
+            if (!startPos || !endPos) continue;
+            
+            // BFS para verificar conectividade usando células que possuem pathColor === color (inclui endpoints e caminhos pintados)
+            const visited = Array(ROWS).fill().map(() => Array(COLS).fill(false));
+            const queue = [startPos];
+            visited[startPos[0]][startPos[1]] = true;
+            let foundEnd = false;
+            
+            while (queue.length > 0) {
+                const [row, col] = queue.shift();
+                if (row === endPos[0] && col === endPos[1]) {
+                    foundEnd = true;
+                    break;
+                }
+                const neighbors = [[-1,0],[1,0],[0,-1],[0,1]];
+                for (let [dr, dc] of neighbors) {
+                    const nr = row+dr, nc = col+dc;
+                    if (nr>=0 && nr<ROWS && nc>=0 && nc<COLS && !visited[nr][nc]) {
+                        if (grid[nr][nc].pathColor === color) {
+                            visited[nr][nc] = true;
+                            queue.push([nr, nc]);
+                        }
+                    }
+                }
+            }
+            if (foundEnd) completed++;
+        }
+        return completed;
+    }
+    
+    // Calcular cobertura: células preenchidas (pathColor !== null) / total células
+    function calcCoverage() {
+        let filled = 0;
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                if (grid[r][c].pathColor !== null) filled++;
+            }
+        }
+        return Math.floor((filled / (ROWS*COLS)) * 100);
+    }
+    
+    // Atualiza estatísticas, vitória
+    function updateStatsAndWin() {
+        const flows = countCompletedFlows();
+        const coverage = calcCoverage();
+        flowsDoneSpan.innerText = flows;
+        coverageSpan.innerText = coverage;
+        
+        // Checar vitória (todos os 5 fluxos completos)
+        if (flows === COLORS.length) {
+            messageBox.innerHTML = "🎉 PARABÉNS! Você conectou todos os pontos! 🎉<br>👉 Próxima fase 👈";
+            messageBox.style.background = "#ffec80";
+            messageBox.style.color = "#b45f1b";
+            // Se não for última fase, destaca botão próximo
+            if (currentLevelIdx + 1 < TOTAL_LEVELS) {
+                // não força auto avanço, apenas mensagem
+            } else if (currentLevelIdx + 1 === TOTAL_LEVELS) {
+                messageBox.innerHTML = "🏆 CAMPEÃO! Você zerou todas as fases! 🏆";
+            }
+        } else {
+            messageBox.innerHTML = "🎨 Pinte caminhos sem cruzar outras cores! Una os mesmos pontinhos!";
+            messageBox.style.background = "#f0e2b6";
+            messageBox.style.color = "#aa6f20";
+        }
+    }
+    
+    function updateMoveDisplay() {
+        moveCountSpan.innerText = moves;
+    }
+    
+    // Mostrar mensagem temporária
+    let msgTimeout;
+    function showMessage(msg, duration = 1500) {
+        if (msgTimeout) clearTimeout(msgTimeout);
+        const prevMsg = messageBox.innerHTML;
+        messageBox.innerHTML = msg;
+        msgTimeout = setTimeout(() => {
+            if (messageBox.innerHTML === msg) {
+                const flows = countCompletedFlows();
+                if (flows === COLORS.length) {
+                    // mantém se for vitória especial
+                    if(currentLevelIdx+1 === TOTAL_LEVELS && flows === COLORS.length)
+                        messageBox.innerHTML = "🏆 CAMPEÃO! Você zerou todas as fases! 🏆";
+                    else if(flows === COLORS.length) 
+                        messageBox.innerHTML = "🎉 PARABÉNS! Você conectou todos os pontos! 🎉<br>👉 Próxima fase 👈";
+                    else
+                        messageBox.innerHTML = "🎨 Pinte caminhos sem cruzar outras cores! Una os mesmos pontinhos!";
+                } else {
+                    messageBox.innerHTML = "🎨 Pinte caminhos sem cruzar outras cores! Una os mesmos pontinhos!";
+                }
+                messageBox.style.background = "#f0e2b6";
+                messageBox.style.color = "#aa6f20";
+            }
+        }, duration);
+    }
+    
+    // Lógica de pintura de célula
+    function paintCell(row, col) {
+        const cell = grid[row][col];
+        // Não pode pintar endpoints
+        if (cell.isEndpoint) {
+            showMessage(`⭐ Ponto fixo! Não pode mudar a cor do pontinho mágico.`, 800);
+            return false;
+        }
+        
+        // Se célula já tem a cor selecionada -> apagar (limpar caminho)
+        if (cell.pathColor === selectedColor) {
+            cell.pathColor = null;
+            moves++;
+            updateMoveDisplay();
+            renderGrid();
+            updateStatsAndWin();
+            return true;
+        }
+        // Se célula tem outra cor diferente (já ocupada por outro fluxo)
+        if (cell.pathColor !== null && cell.pathColor !== selectedColor) {
+            showMessage(`❌ Caminho da cor ${COLOR_NAMES[cell.pathColor]} já está aqui! Apague primeiro.`, 900);
+            return false;
+        }
+        // Se vazia, pinta
+        if (cell.pathColor === null) {
+            cell.pathColor = selectedColor;
+            moves++;
+            updateMoveDisplay();
+            renderGrid();
+            updateStatsAndWin();
+            // Verificação se criou sem querer conexão cruzada? O fluxo só é validado na contagem
+            // Se completou todos, mensagem já aparece
+            const flowsNow = countCompletedFlows();
+            if (flowsNow === COLORS.length) {
+                showMessage("✨ LINDO! Fase completa! Avance para próxima ✨", 1800);
+            }
+            return true;
+        }
+        return false;
+    }
+    
+    // Renderizar grade com divs (estilo dinâmico)
+    function renderGrid() {
+        gridContainer.innerHTML = "";
+        for (let i = 0; i < ROWS; i++) {
+            for (let j = 0; j < COLS; j++) {
+                const cell = grid[i][j];
+                const colorVal = cell.pathColor || "";
+                const div = document.createElement("div");
+                div.className = "cell";
+                if (cell.isEndpoint) div.classList.add("endpoint");
+                div.setAttribute("data-color", colorVal);
+                // Adiciona evento de clique
+                div.addEventListener("click", (function(r,c) {
+                    return function() { paintCell(r,c); };
+                })(i,j));
+                gridContainer.appendChild(div);
+            }
+        }
+    }
+    
+    // Criar paleta interativa
+    function initPalette() {
+        const paletteDiv = document.getElementById("colorPalette");
+        paletteDiv.innerHTML = "";
+        COLORS.forEach(color => {
+            const btn = document.createElement("div");
+            btn.className = `color-btn ${color}`;
+            btn.style.backgroundColor = 
+                color === "red" ? "#ff6b6b" :
+                color === "green" ? "#6bcf7f" :
+                color === "blue" ? "#6ba5ff" :
+                color === "orange" ? "#ffb347" : "#c97eff";
+            btn.setAttribute("data-color", color);
+            if (selectedColor === color) btn.classList.add("active");
+            btn.addEventListener("click", () => {
+                // atualiza seleção
+                selectedColor = color;
+                document.querySelectorAll(".color-btn").forEach(cb => cb.classList.remove("active"));
+                btn.classList.add("active");
+                showMessage(`🖌️ Cor selecionada: ${COLOR_NAMES[color]}`, 600);
+            });
+            paletteDiv.appendChild(btn);
+        });
+    }
+    
+    // Ação de limpar caminhos (sem resetar movimentos? resetamos apenas caminhos, mas movimentos não incrementa, porém é uma ação extra)
+    // Decisão: Limpar caminhos NÃO incrementa movimentos, é uma ajuda.
+    function clearAllPaths() {
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                if (!grid[r][c].isEndpoint) {
+                    grid[r][c].pathColor = null;
+                }
+            }
+        }
+        renderGrid();
+        updateStatsAndWin();
+        showMessage("🧽 Todos os caminhos removidos! Recomece a pintura.", 1300);
+    }
+    
+    // Avançar para próxima fase quando completa automaticamente? oferecemos botão next, mas ao completar fluxos sugerimos.
+    // Previne bugs: next/prev já existem
+    
+    // Inicializa jogo e carrega fase
+    function loadLevel(levelIdx) {
+        currentLevelIdx = levelIdx;
+        grid = initGridFromLevel();
+        moves = 0;
+        updateMoveDisplay();
+        renderGrid();
+        updateStatsAndWin();
+        levelNumSpan.innerText = currentLevelIdx+1;
+        selectedColor = "red";
+        initPalette();  // atualiza destaque
+    }
+    
+    // Eventos dos botões
+    function bindEvents() {
+        document.getElementById("prevBtn").addEventListener("click", () => {
+            changeLevel(-1);
+            initPalette();
+        });
+        document.getElementById("nextBtn").addEventListener("click", () => {
+            changeLevel(1);
+            initPalette();
+        });
+        document.getElementById("resetBtn").addEventListener("click", () => {
+            resetFullLevel();
+            initPalette();
+        });
+        document.getElementById("clearPathsBtn").addEventListener("click", () => {
+            clearAllPaths();
+        });
+    }
+    
+    // Inicialização
+    function startGame() {
+        loadLevel(0);
+        bindEvents();
+    }
+    
+    startGame();
+</script>
+</body>
+</html>
